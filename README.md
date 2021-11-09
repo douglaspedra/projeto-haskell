@@ -1,0 +1,1 @@
+Trabalho P2 para auala de Haskell - FATEC-BS "Rubens Lara"
