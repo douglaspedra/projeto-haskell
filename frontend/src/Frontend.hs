@@ -27,39 +27,28 @@ import Common.Route
 
 menu :: DomBuilder t m => m()
 menu = do
-  elAttr "nav" ("class" =: "navbar navbar-dark bg-dark") $ do
+  elAttr "nav" ("class" =: "navbar navbar-expand-sm navbar-dark bg-dark") $ do
     elAttr "div" ("class" =: "container-fluid") $ do
-      elAttr "a" ("class" =: "navbar-brand" 
-                <> "href" =: "#") (text "i-Feira")
-      elAttr "button" ("class" =: "navbar-toggler" 
-                    <> "type" =: "button" 
-                    <> "data-bs-toggle" =: "collapse" 
-                    <> "data-bs-target" =: "#navbarNav" 
-                    <> "aria-controls" =: "navbarNav" 
-                    <> "aria-expanded" =: "false" 
+      elAttr "a" ("class" =: "navbar-brand mr-auto me-auto " <> "href" =: "#") (text "i-Feira")
+      elAttr "button" ("class" =: "navbar-toggler"
+                    <> "type" =: "button"
+                    <> "data-bs-toggle" =: "collapse"
+                    <> "data-bs-target" =: "#navbarNav"
+                    <> "aria-controls" =: "navbarNav"
+                    <> "aria-expanded" =: "false"
                     <> "aria-label" =: "Toggle navigation") $ do
         elAttr "span" ("class" =: "navbar-toggler-icon") blank
-
-    elAttr "div" ("class" =: "collapse navbar-collapse" 
-               <> "id" =: "navbarNav") $ do
+    elAttr "div" ("class" =: "collapse navbar-collapse" <> "id" =: "navbarNav") $ do
       elAttr "ul" ("class" =: "navbar-nav") $ do
-        elAttr "li" ("class" =: "nav-item") $ do
-          elAttr "a" ("class" =: "nav-link active" 
-                   <> "aria-current" =: "page" 
-                   <> "href" =: "#") 
+        elAttr "li" ("class" =: "nav-item active") $ do
+          elAttr "a" ("class" =: "nav-link active" <> "href" =: "#") 
                       (text "Pagina Inicial")
-        elAttr "li" ("class" =: "nav-item") $ do
+        elAttr "li" ("class" =: "nav-item active") $ do
           elAttr "a" ("class" =: "nav-link" <> "href" =: "#") 
                       (text "Barracas de Feira")
-        elAttr "li" ("class" =: "nav-item") $ do
+        elAttr "li" ("class" =: "nav-item active") $ do
           elAttr "a" ("class" =: "nav-link" <> "href" =: "#") 
-                      (text "Categorias")
-
-
-
-
-
-
+                      (text "Categoria de Produto")
 
 frontend :: Frontend (R FrontendRoute)
 frontend = Frontend
@@ -75,9 +64,7 @@ frontend = Frontend
       elAttr "script" ("href" =: "https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" 
                   <> "integrity" =: "sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" 
                   <> "crossorigin" =:"anonymous") blank
-
-
-
+      elAttr "meta" ("name" =: "viewport" <> "content" =: "width=device-width, initial-scale=1") blank
   , _frontend_body = do
       el "h1" $ text "Trabalho P2 - Haskell"
       el "p" $ text "Grupo: Douglas C. Pedra | Gabriel | Mariana | Thales"
