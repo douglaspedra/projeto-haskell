@@ -29,7 +29,7 @@ menu :: DomBuilder t m => m()
 menu = do
   elAttr "nav" ("class" =: "navbar navbar-expand-sm navbar-dark bg-dark") $ do
     elAttr "div" ("class" =: "container-fluid") $ do
-      elAttr "a" ("class" =: "navbar-brand mr-auto me-auto " <> "href" =: "#") (text "i-Feira")
+      elAttr "a" ("class" =: "navbar-brand" <> "href" =: "#") (text "i-Feira")
       elAttr "button" ("class" =: "navbar-toggler"
                     <> "type" =: "button"
                     <> "data-bs-toggle" =: "collapse"
@@ -38,17 +38,17 @@ menu = do
                     <> "aria-expanded" =: "false"
                     <> "aria-label" =: "Toggle navigation") $ do
         elAttr "span" ("class" =: "navbar-toggler-icon") blank
-    elAttr "div" ("class" =: "collapse navbar-collapse" <> "id" =: "navbarNav") $ do
-      elAttr "ul" ("class" =: "navbar-nav") $ do
-        elAttr "li" ("class" =: "nav-item active") $ do
-          elAttr "a" ("class" =: "nav-link active" <> "href" =: "#") 
-                      (text "Pagina Inicial")
-        elAttr "li" ("class" =: "nav-item active") $ do
-          elAttr "a" ("class" =: "nav-link" <> "href" =: "#") 
-                      (text "Barracas de Feira")
-        elAttr "li" ("class" =: "nav-item active") $ do
-          elAttr "a" ("class" =: "nav-link" <> "href" =: "#") 
-                      (text "Categoria de Produto")
+      elAttr "div" ("class" =: "collapse navbar-collapse" <> "id" =: "navbarNav") $ do
+        elAttr "ul" ("class" =: "navbar-nav") $ do
+          elAttr "li" ("class" =: "nav-item active") $ do
+            elAttr "a" ("class" =: "nav-link active" <> "href" =: "#") 
+                        (text "Pagina Inicial")
+          elAttr "li" ("class" =: "nav-item active") $ do
+            elAttr "a" ("class" =: "nav-link" <> "href" =: "#") 
+                        (text "Barracas de Feira")
+          elAttr "li" ("class" =: "nav-item active") $ do
+            elAttr "a" ("class" =: "nav-link" <> "href" =: "#") 
+                        (text "Categoria de Produto")
 
 frontend :: Frontend (R FrontendRoute)
 frontend = Frontend
