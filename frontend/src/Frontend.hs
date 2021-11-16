@@ -118,9 +118,13 @@ currPag p =
     Ofertas -> ofertasPag
     ExemplosAula -> exemplosPag
 
+mainPag :: (DomBuilder t m, PostBuild t m, MonadHold t m) => m ()
+mainPag = do
+  pagina <- el "div" menu
+  dyn_ $ currPag <$> pagina 
+
 principalPag :: (DomBuilder t m, PostBuild t m, MonadHold t m) => m ()
 principalPag = do
-      pagina <- el "div" menu
       el "h1" $ text "Trabalho P2 - Haskell"
       el "p" $ text "Grupo: Douglas C. Pedra | Gabriel | Mariana | Thales"
       elAttr "img" ("src" =: static @"agricultor.jpg") blank
@@ -187,5 +191,5 @@ frontend = Frontend
                   <> "integrity" =: "sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" 
                   <> "crossorigin" =:"anonymous") blank
       elAttr "meta" ("name" =: "viewport" <> "content" =: "width=device-width, initial-scale=1") blank
-  , _frontend_body = principalPag
+  , _frontend_body = mainPag
   }
