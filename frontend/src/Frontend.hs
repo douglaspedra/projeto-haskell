@@ -103,30 +103,74 @@ sumEvt = do
 
 -----------------------------------------------------------------------------------------------------------------
 
-menu :: DomBuilder t m => m()
+data Pagina = Principal | Barracas | Ofertas | ExemplosAula
+
+clickLi :: DomBuilder t m => Pagina -> T.Text -> m (Event t Pagina)
+clickLi p t = do
+  (ev, _) <- elAttr' "li" ("class" =: "nav-item") (elAttr "a" ("href" =: "#" <> "class" =: "nav-link") (text t))
+  return ((\_ -> p) <$> domEvent Click ev)
+
+currPag :: (DomBuilder t m, PostBuild t m, MonadHold t m) => Pagina -> m ()
+currPag p = 
+  case p of 
+    Principal -> principalPag
+    Barracas -> barracasPag
+    Ofertas -> ofertasPag
+    ExemplosAula -> exemplosPag
+
+principalPag :: (DomBuilder t m, PostBuild t m, MonadHold t m) => m ()
+principalPag = do
+      pagina <- el "div" menu
+      el "h1" $ text "Trabalho P2 - Haskell"
+      el "p" $ text "Grupo: Douglas C. Pedra | Gabriel | Mariana | Thales"
+      elAttr "img" ("src" =: static @"agricultor.jpg") blank
+
+barracasPag :: (DomBuilder t m, PostBuild t m, MonadHold t m) => m ()
+barracasPag = do
+  el "h3" (text "Pagina Barracas")
+  el "span" (text "Pagina em construcao")
+
+ofertasPag :: (DomBuilder t m, PostBuild t m, MonadHold t m) => m ()
+ofertasPag = do
+  el "h3" (text "Pagina Ofertas")
+  el "span" (text "Pagina em construcao")
+
+exemplosPag :: (DomBuilder t m, PostBuild t m, MonadHold t m) => m ()
+exemplosPag = do
+  el "h3" $ text "Exemplos da Aula:"
+  el "span" $ text "listaAtr aplicado em menu :"
+  menuEx
+  el "h3" $ text "caixas 1 :"
+  caixas
+  el "h3" $ text "caixaSoma :"
+  caixaSoma
+  el "h3" $ text "revText :"
+  bttnEvt
+  el "h3" $ text "sumEvt :"
+  sumEvt      
+  
+
+menu :: (DomBuilder t m, MonadHold t m) => m (Dynamic t Pagina)
 menu = do
-  elAttr "nav" ("class" =: "navbar navbar-expand-sm navbar-dark bg-dark") $ do
-    elAttr "div" ("class" =: "container-fluid") $ do
-      elAttr "a" ("class" =: "navbar-brand" <> "href" =: "#") (text "i-Feira")
-      elAttr "button" ("class" =: "navbar-toggler"
-                    <> "type" =: "button"
-                    <> "data-bs-toggle" =: "collapse"
-                    <> "data-bs-target" =: "#navbarNav"
-                    <> "aria-controls" =: "navbarNav"
-                    <> "aria-expanded" =: "false"
-                    <> "aria-label" =: "Toggle navigation") $ do
-        elAttr "span" ("class" =: "navbar-toggler-icon") blank
-      elAttr "div" ("class" =: "collapse navbar-collapse" <> "id" =: "navbarNav") $ do
-        elAttr "ul" ("class" =: "navbar-nav") $ do
-          elAttr "li" ("class" =: "nav-item active") $ do
-            elAttr "a" ("class" =: "nav-link active" <> "href" =: "#") 
-                        (text "Pagina Inicial")
-          elAttr "li" ("class" =: "nav-item active") $ do
-            elAttr "a" ("class" =: "nav-link" <> "href" =: "#") 
-                        (text "Barracas de Feira")
-          elAttr "li" ("class" =: "nav-item active") $ do
-            elAttr "a" ("class" =: "nav-link" <> "href" =: "#") 
-                        (text "Categoria de Produto")
+  evs <- elAttr "nav" ("class" =: "navbar navbar-expand-sm navbar-dark bg-dark") $ do
+          elAttr "div" ("class" =: "container-fluid") $ do
+            elAttr "a" ("class" =: "navbar-brand" <> "href" =: "#") (text "i-Feira")
+            elAttr "button" ("class" =: "navbar-toggler"
+                          <> "type" =: "button"
+                          <> "data-bs-toggle" =: "collapse"
+                          <> "data-bs-target" =: "#navbarNav"
+                          <> "aria-controls" =: "navbarNav"
+                          <> "aria-expanded" =: "false"
+                          <> "aria-label" =: "Toggle navigation") $ do
+              elAttr "span" ("class" =: "navbar-toggler-icon") blank
+            elAttr "div" ("class" =: "collapse navbar-collapse" <> "id" =: "navbarNav") $ do
+              elAttr "ul" ("class" =: "navbar-nav") $ do
+                p1 <- clickLi Principal "Pagina Inicial"
+                p2 <- clickLi Barracas "Barracas"
+                p3 <- clickLi Ofertas "Ofertas"
+                p4 <- clickLi ExemplosAula "Exemplos da Aula"
+                return (leftmost [p1,p2,p3,p4])
+  holdDyn Principal evs
 
 frontend :: Frontend (R FrontendRoute)
 frontend = Frontend
@@ -143,35 +187,5 @@ frontend = Frontend
                   <> "integrity" =: "sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" 
                   <> "crossorigin" =:"anonymous") blank
       elAttr "meta" ("name" =: "viewport" <> "content" =: "width=device-width, initial-scale=1") blank
-  , _frontend_body = do
-      el "h1" $ text "Trabalho P2 - Haskell"
-      el "p" $ text "Grupo: Douglas C. Pedra | Gabriel | Mariana | Thales"
-      menu
-      el "h3" $ text "Exemplos da Aula:"
-      el "span" $ text "listaAtr aplicado em menu :"
-      menuEx
-      el "h3" $ text "caixas 1 :"
-      caixas
-      el "h3" $ text "caixaSoma :"
-      caixaSoma
-      el "h3" $ text "revText :"
-      bttnEvt
-      el "h3" $ text "sumEvt :"
-      sumEvt      
-      elAttr "img" ("src" =: static @"agricultor.jpg") blank
-      el "p" $ text $ T.pack commonStuff
-      
-      -- `prerender` and `prerender_` let you choose a widget to run on the server
-      -- during prerendering and a different widget to run on the client with
-      -- JavaScript. The following will generate a `blank` widget on the server and
-      -- print "Hello, World!" on the client.
-      prerender_ blank $ liftJSM $ void $ eval ("console.log('Hello, World!')" :: T.Text)
-
---      elAttr "img" ("src" =: static @"obelisk.jpg") blank
-      el "div" $ do
-        exampleConfig <- getConfig "common/example"
-        case exampleConfig of
-          Nothing -> text "No config file found in config/common/example"
-          Just s -> text $ T.decodeUtf8 s
-      return ()
+  , _frontend_body = principalPag
   }
