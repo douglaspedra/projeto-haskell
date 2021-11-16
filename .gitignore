@@ -13,19 +13,3 @@ result
 result-*
 tags
 TAGS
-
-
-Host
-ec2-3-229-166-245.compute-1.amazonaws.com
-Database
-d1gk6it9i5s3jh
-User
-znzsyqflgoierk
-Port
-5432
-Password
-ed32029be9373c9c1abc82f4a06a9ae29aae356afd5724524a19bbd8207511d5
-URI
-postgres://znzsyqflgoierk:ed32029be9373c9c1abc82f4a06a9ae29aae356afd5724524a19bbd8207511d5@ec2-3-229-166-245.compute-1.amazonaws.com:5432/d1gk6it9i5s3jh
-Heroku CLI
-heroku pg:psql postgresql-clean-19103 --app i-feira
