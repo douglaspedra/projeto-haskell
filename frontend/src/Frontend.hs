@@ -13,6 +13,9 @@ import Obelisk.Frontend
 import Obelisk.Configs
 import Obelisk.Route
 import Obelisk.Generated.Static
+import Data.Map (Map)
+import Text.Read
+import Data.Maybe
 
 import Reflex.Dom.Core
 
@@ -24,6 +27,81 @@ import Common.Route
 -- To run code in a pure client or pure server context, use one of the
 -- `prerender` functions.
 
+
+--Exemplos aula:
+
+caixas :: (DomBuilder t m, PostBuild t m) => m ()
+caixas = el "div" $ do
+  t <- inputElement def -- m (Dynamic Text)
+  s <- inputElement def -- m (Dynamic Text)
+  text " "
+  dynText $ zipDynWith (<>) (_inputElement_value t) (_inputElement_value s)
+
+
+listaAtr :: Map T.Text T.Text
+listaAtr = "class" =: "class1" <> "id" =: "li2"
+
+menuEx :: DomBuilder t m => m ()
+menuEx = do
+  el "div" $ do
+    el "ul" $ do
+      el "li" (text "Item 1")
+      elAttr "li" listaAtr (text "Item 2")
+      el "li" (text "Item 3")
+      el "li" (text "Item 4")
+
+numberInput :: DomBuilder t m => m (Dynamic t Double)
+numberInput = do 
+  n <- inputElement $ def
+    & inputElementConfig_initialValue .~ "0"
+    & inputElementConfig_elementConfig
+    . elementConfig_initialAttributes .~ ("type" =: "number")
+  return $ fmap (fromMaybe 0 . readMaybe . T.unpack)
+              (_inputElement_value n)
+
+caixaSoma :: (DomBuilder t m, PostBuild t m) => m ()
+caixaSoma = do
+  n1 <- numberInput -- m (Dynamic t Double)
+  text " "
+  n2 <- numberInput -- m (Dynamic t Double)
+  dynText (fmap (T.pack . show) (zipDynWith (+) n1 n2))
+
+revText :: T.Text -> T.Text
+revText t = T.pack (reverse (T.unpack t))
+
+buttonClick :: (DomBuilder t m, PostBuild t m, MonadHold t m) => m (Event t T.Text)
+buttonClick = do
+  t <- inputElement def
+  (e,_) <- el' "button" (text "OK")
+  return $ attachPromptlyDynWith const
+                                  (fmap revText (_inputElement_value t))
+                                  (domEvent Click e)
+
+bttnEvt :: (DomBuilder t m, PostBuild t m, MonadHold t m) => m ()
+bttnEvt = do
+  evt <- buttonClick
+  texto <- holdDyn "" evt --Event -> Dynamic
+  el "div" (dynText texto)
+
+sumButton :: (DomBuilder t m, PostBuild t m, MonadHold t m) => m (Event t Double)
+sumButton = do
+  n1 <- numberInput
+  text " "
+  n2 <- numberInput
+  text " "
+  (e,_) <- el' "button" (text "OK")
+  let dynDouble = zipDynWith (+) n1 n2
+  return $ attachPromptlyDynWith const
+                                dynDouble
+                                (domEvent Click e)
+
+sumEvt :: (DomBuilder t m, PostBuild t m, MonadHold t m) => m ()
+sumEvt = do
+  evt <- sumButton
+  s <- holdDyn 0 evt
+  el "div" (dynText $ fmap (T.pack . show) s)
+
+-----------------------------------------------------------------------------------------------------------------
 
 menu :: DomBuilder t m => m()
 menu = do
@@ -69,6 +147,17 @@ frontend = Frontend
       el "h1" $ text "Trabalho P2 - Haskell"
       el "p" $ text "Grupo: Douglas C. Pedra | Gabriel | Mariana | Thales"
       menu
+      el "h3" $ text "Exemplos da Aula:"
+      el "span" $ text "listaAtr aplicado em menu :"
+      menuEx
+      el "h3" $ text "caixas 1 :"
+      caixas
+      el "h3" $ text "caixaSoma :"
+      caixaSoma
+      el "h3" $ text "revText :"
+      bttnEvt
+      el "h3" $ text "sumEvt :"
+      sumEvt      
       elAttr "img" ("src" =: static @"agricultor.jpg") blank
       el "p" $ text $ T.pack commonStuff
       
