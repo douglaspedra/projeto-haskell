@@ -12,8 +12,12 @@ profile/
 result
 result-*
 tags
+<<<<<<< HEAD
 TAGS
 <<<<<<< HEAD
 
 =======
+>>>>>>> develop
+=======
+TAGS
 >>>>>>> develop
