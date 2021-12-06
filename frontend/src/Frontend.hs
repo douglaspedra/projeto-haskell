@@ -22,6 +22,7 @@ import Reflex.Dom.Core
 
 import Common.Api
 import Common.Route
+import Data.Aeson
 
 
 -- This runs in a monad that can be run on the client or the server.
@@ -51,7 +52,7 @@ menuEx = do
       el "li" (text "Item 3")
       el "li" (text "Item 4")
 
-numberInput :: DomBuilder t m => m (Dynamic t Double)
+numberInput :: (DomBuilder t m, Num a, Read a) => m (Dynamic t a)
 numberInput = do 
   n <- inputElement $ def
     & inputElementConfig_initialValue .~ "0"
@@ -62,9 +63,9 @@ numberInput = do
 
 caixaSoma :: (DomBuilder t m, PostBuild t m) => m ()
 caixaSoma = do
-  n1 <- numberInput -- m (Dynamic t Double)
+  n1 <- numberInput -- Num a => m (Dynamic t Double)
   text " "
-  n2 <- numberInput -- m (Dynamic t Double)
+  n2 <- numberInput -- Num a => m (Dynamic t Double)
   dynText (fmap (T.pack . show) (zipDynWith (+) n1 n2))
 
 revText :: T.Text -> T.Text
@@ -129,7 +130,7 @@ currPag p =
     Barracas -> barracasPag
     Ofertas -> ofertasPag
     ExemplosAula -> exemplosPag
-    ExemploBD -> req
+    ExemploBD -> reqBarracaLista
 
 mainPag :: (DomBuilder t m, PostBuild t m, MonadHold t m, MonadFix m, Prerender js t m) => m ()
 mainPag = do
@@ -193,12 +194,15 @@ exemplosPag = do
   el "h3" $ text "Contador :"
   pagClick 
 
+--para obter o /cliente /barraca /buscar/13
+getPath :: R BackendRoute -> T.Text
+getPath p = renderBackendRoute checFullREnc p
 
-getPath :: T.Text
-getPath = renderBackendRoute checFullREnc $ BackendRoute_Cliente :/ ()
+getListReq :: XhrRequest ()
+getListReq = xhrRequest "GET" (getPath (BackendRoute_BarracaListar :/ ())) def
 
-nomeRequest :: T.Text -> XhrRequest T.Text
-nomeRequest s = postJson getPath (Cliente s)
+sendRequest :: ToJSON a => R BackendRoute -> a -> XhrRequest T.Text
+sendRequest r dados = postJson (getPath r) dados
 
 req :: ( DomBuilder t m, Prerender js t m) => m ()
 req = do
@@ -209,9 +213,47 @@ req = do
   let nm = tag (current $ _inputElement_value inputEl) click
   _ :: Dynamic t (Event t (Maybe T.Text)) <- prerender
       (pure never)
-      (fmap decodeXhrResponse <$> performRequestAsync (nomeRequest <$> nm))
+      (fmap decodeXhrResponse <$> performRequestAsync (sendRequest (BackendRoute_Cliente :/ ()) <$> nm))
   return ()
 
+reqBarraca :: (DomBuilder t m, Prerender js t m) => m ()
+reqBarraca = do
+  nome <- inputElement def
+  categoria <- inputElement def
+  let barraca = fmap (\(n,c) -> Barraca 0 n c) (zipDyn (_inputElement_value nome)(_inputElement_value categoria))
+  (submitBtn,_) <- el' "button" (text "Inserir")
+  let click = domEvent Click submitBtn
+  let barrEvt = tag (current barraca) click
+  _ :: Dynamic t (Event t (Maybe T.Text)) <- prerender
+      (pure never)
+      (fmap decodeXhrResponse <$> performRequestAsync (sendRequest (BackendRoute_Barraca :/ ()) <$> barrEvt))
+  return ()
+
+tabBarraca :: DomBuilder t m => Barraca -> m ()
+tabBarraca br = do
+  el "tr" $ do
+    el "td" (text $ T.pack $ show $ barracaId br)
+    el "td" (text $ barracaNome br)
+    el "td" (text $ barracaCategoria br)
+
+reqBarracaLista :: ( DomBuilder t m , Prerender js t m , MonadHold t m , MonadFix m , PostBuild t m) => m ()
+reqBarracaLista = do
+  (btn, _) <- el' "button" (text "Listar Barracas")
+  let click = domEvent Click btn
+  barracs :: Dynamic t (Event t (Maybe [Barraca])) <- prerender
+    (pure never)
+    (fmap decodeXhrResponse <$> performRequestAsync (const getListReq <$> click))
+  dynB <- foldDyn (\bs d -> case bs of
+                          Nothing -> []
+                          Just b -> d++b) [] (switchDyn barracs)
+  el "table" $ do
+    el "thead" $ do
+      el "tr" $ do
+        el "th" (text "Id")
+        el "th" (text "Nome")
+        el "th" (text "Categoria")
+    el "tbody" $ do
+      dyn_ (fmap sequence (ffor dynB (fmap tabBarraca)))
 
 frontend :: Frontend (R FrontendRoute)
 frontend = Frontend

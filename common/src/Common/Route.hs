@@ -31,8 +31,18 @@ checFullREnc = checkEncoder fullRouteEncoder &
 
 data BackendRoute :: * -> * where
   -- | Used to handle unparseable routes.
-  BackendRoute_Cliente :: BackendRoute ()
   BackendRoute_Missing :: BackendRoute ()
+  BackendRoute_Cliente :: BackendRoute ()
+  BackendRoute_Barraca :: BackendRoute ()
+  BackendRoute_BarracaListar :: BackendRoute ()
+  BackendRoute_BarracaBuscar :: BackendRoute Int
+  -- BackendRoute_Oferta :: BackendRoute ()
+  -- BackendRoute_OfertaListar :: BackendRoute ()
+  -- BackendRoute_OfertaBuscar :: BackendRoute Int
+  -- BackendRoute_Zona :: BackendRoute ()
+  -- BackendRoute_ZonaListar :: BackendRoute ()
+  -- BackendRoute_ZonaBuscar :: BackendRoute ()
+
   -- You can define any routes that will be handled specially by the backend here.
   -- i.e. These do not serve the frontend, but do something different, such as serving static files.
 
@@ -46,7 +56,11 @@ fullRouteEncoder = mkFullRouteEncoder
   (FullRoute_Backend BackendRoute_Missing :/ ())
   (\case
       BackendRoute_Missing -> PathSegment "missing" $ unitEncoder mempty
-      BackendRoute_Cliente -> PathSegment "cliente" $ unitEncoder mempty)
+      BackendRoute_Cliente -> PathSegment "cliente" $ unitEncoder mempty
+      BackendRoute_Barraca -> PathSegment "barraca" $ unitEncoder mempty
+      BackendRoute_BarracaListar -> PathSegment "barracaListar" $ unitEncoder mempty
+      BackendRoute_BarracaBuscar -> PathSegment "barracaBuscar" $ readShowEncoder 
+      )
   (\case
       FrontendRoute_Main -> PathEnd $ unitEncoder mempty)
 
