@@ -19,63 +19,47 @@ import Database.PostgreSQL.Simple
 --     userSenha :: Text
 -- } deriving (Generic, ToJSON, FromJSON, ToRow, FromRow, Eq, Show)
 
-data Cliente = Cliente Text deriving (Generic, ToJSON, FromJSON)
+--data Cliente = Cliente Text deriving (Generic, ToJSON, FromJSON)
 
--- data Cliente = Cliente {
---     clienteId :: Int,
---     clienteUser :: Int,
---     clienteNome :: Text,
---     clienteCpf :: Text,
---     clienteTelefone :: Text,
---     clienteEndereco :: Text,
---     clienteZona :: Int
--- } deriving (Generic, ToJSON, FromJSON, ToRow, FromRow, Eq, Show)
+data Funcionario = Funcionario {
+    idFuncionario :: Int,
+    cdBarracaFuncionario :: Int,
+    nomeFuncionario :: Text,
+    cpfFuncionario :: Text,
+    telefoneFuncionario :: Text
+} deriving (Generic, ToJSON, FromJSON, ToRow, FromRow, Eq, Show)
 
--- data Carrinho = Carrinho {
---     carrinhoId :: Int,
---     carrinhoCliente :: Int, --clienteId
---     carrinhoProduto :: Int, --produtoId
---     carrinhoQtd :: Int,
---     carrinhoTotal :: Double
--- } deriving (Generic, ToJSON, FromJSON, ToRow, FromRow, Eq, Show)
 
 data Barraca = Barraca {
     barracaId :: Int,
---    barracaUser :: Int,
     barracaNome :: Text,
-    barracaCategoria :: Text --categoriaId
---    barracaZona :: Int --zonaId
+    barracaCategoria :: Text
 } deriving (Generic, ToJSON, FromJSON, ToRow, FromRow, Eq, Show)
 
--- data Categoria = Categoria {
---     categoriaId :: Int,
---     categoriaTipo :: Text
--- } deriving (Generic, ToJSON, FromJSON, ToRow, FromRow, Eq, Show)
-
--- data Zona = Zona {
---     zonaId :: Int,
---     zonaAvenida :: Text,
---     zonaBairro :: Text,
---     zonaCidade :: Text
--- } deriving (Generic, ToJSON, FromJSON, ToRow, FromRow, Eq, Show)
-
 data Produto = Produto {
-    produtoId :: Int,
-    produtoBarraca :: Int, --barrcaId
-    produtoNome :: Text,
-    produtoValor :: Double,
-    produtoQtd :: Int
+    idProduto :: Int,
+    cdBarracaProduto :: Int,
+    nomeProduto :: Text,
+    categoriaProduto :: Text,
+    valorProduto :: Double,
+    qtdProduto :: Int
 } deriving (Generic, ToJSON, FromJSON, ToRow, FromRow, Eq, Show)
 
 data Oferta = Oferta {
-    ofertaId :: Int,
-    ofertaProduto :: Text,
-    ofertaDesconto :: Double,
-    ofertaValor :: Double,
-    ofertaBarraca :: Int --barracaId
+    idOferta :: Int,
+    cdProdutoOferta :: Int,
+    descontoOferta :: Double,
+    valorOferta :: Double    
 } deriving (Generic, ToJSON, FromJSON, ToRow, FromRow, Eq, Show)
 
-
+-- data Zona = Zona {
+--     idZona :: Int,
+--     numeroZona :: Int,
+--     diaZona :: Text,
+--     avenidaZona :: Text,
+--     bairroZona :: Text,
+--     cidadeZona :: Text
+-- } deriving (Generic, ToJSON, FromJSON, ToRow, FromRow, Eq, Show)
 
 
 

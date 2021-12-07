@@ -116,7 +116,9 @@ pagClick = do
 
 -----------------------------------------------------------------------------------------------------------------
 
-data Pagina = Principal | Barracas | Ofertas | ExemplosAula | ExemploBD
+data Pagina = Principal | Barracas | Ofertas | Produtos | Funcionarios | Cadastros | ExemplosAula
+
+data Acao = Perfil Int | Editar Int | Deletar Int
 
 clickLi :: DomBuilder t m => Pagina -> T.Text -> m (Event t Pagina)
 clickLi p t = do
@@ -127,10 +129,12 @@ currPag :: (DomBuilder t m, PostBuild t m, MonadHold t m, MonadFix m, Prerender 
 currPag p = 
   case p of 
     Principal -> principalPag
-    Barracas -> barracasPag
+    Barracas -> reqListaBarraca
     Ofertas -> ofertasPag
+    Produtos -> produtosPag
+    Funcionarios -> funcionariosPag
+    Cadastros -> reqBarraca
     ExemplosAula -> exemplosPag
-    ExemploBD -> reqBarracaLista
 
 mainPag :: (DomBuilder t m, PostBuild t m, MonadHold t m, MonadFix m, Prerender js t m) => m ()
 mainPag = do
@@ -156,9 +160,10 @@ menu = do
                 p1 <- clickLi Principal "Pagina Inicial"
                 p2 <- clickLi Barracas "Barracas"
                 p3 <- clickLi Ofertas "Ofertas"
-                p4 <- clickLi ExemplosAula "Exemplos da Aula"
-                p5 <- clickLi ExemploBD "Insercao no bd"
-                return (leftmost [p1,p2,p3,p4,p5])
+                p4 <- clickLi Funcionarios "Funcionarios"
+                p5 <- clickLi Cadastros "Cadastros"
+                p6 <- clickLi ExemplosAula "Exemplos da Aula"
+                return (leftmost [p1,p2,p3,p4,p5,p6])
   holdDyn Principal evs 
 
 
@@ -176,6 +181,16 @@ barracasPag = do
 ofertasPag :: (DomBuilder t m, PostBuild t m, MonadHold t m) => m ()
 ofertasPag = do
   el "h3" (text "Pagina Ofertas")
+  el "span" (text "Pagina em construcao")
+
+funcionariosPag :: (DomBuilder t m, PostBuild t m, MonadHold t m) => m ()
+funcionariosPag = do
+  el "h3" (text "Pagina Funcionarios")
+  el "span" (text "Pagina em construcao")
+
+produtosPag :: (DomBuilder t m, PostBuild t m, MonadHold t m) => m ()
+produtosPag = do
+  el "h3" (text "Pagina Produtos")
   el "span" (text "Pagina em construcao")
 
 exemplosPag :: (DomBuilder t m, PostBuild t m, MonadHold t m, MonadFix m) => m ()
@@ -198,11 +213,27 @@ exemplosPag = do
 getPath :: R BackendRoute -> T.Text
 getPath p = renderBackendRoute checFullREnc p
 
-getListReq :: XhrRequest ()
-getListReq = xhrRequest "GET" (getPath (BackendRoute_BarracaListar :/ ())) def
-
 sendRequest :: ToJSON a => R BackendRoute -> a -> XhrRequest T.Text
 sendRequest r dados = postJson (getPath r) dados
+
+
+getBarracaListReq :: XhrRequest ()
+getBarracaListReq = xhrRequest "GET" (getPath (BackendRoute_BarracaListar :/ ())) def
+
+getOfertaListReq :: XhrRequest ()
+getOfertaListReq = xhrRequest "GET" (getPath (BackendRoute_OfertaListar :/ ())) def
+
+getProdutoListReq :: XhrRequest ()
+getProdutoListReq = xhrRequest "GET" (getPath (BackendRoute_ProdutoListar :/ ())) def
+
+getProdutoReq :: Int -> XhrRequest ()
+getProdutoReq pid = xhrRequest "GET" (getPath (BackendRoute_ProdutoBuscar :/ pid)) def
+
+getFuncionarioListReq :: XhrRequest ()
+getFuncionarioListReq = xhrRequest "GET" (getPath (BackendRoute_FuncionarioListar :/ ())) def
+
+
+
 
 req :: ( DomBuilder t m, Prerender js t m) => m ()
 req = do
@@ -215,6 +246,9 @@ req = do
       (pure never)
       (fmap decodeXhrResponse <$> performRequestAsync (sendRequest (BackendRoute_Cliente :/ ()) <$> nm))
   return ()
+
+
+
 
 reqBarraca :: (DomBuilder t m, Prerender js t m) => m ()
 reqBarraca = do
@@ -229,31 +263,127 @@ reqBarraca = do
       (fmap decodeXhrResponse <$> performRequestAsync (sendRequest (BackendRoute_Barraca :/ ()) <$> barrEvt))
   return ()
 
-tabBarraca :: DomBuilder t m => Barraca -> m ()
+tabBarraca :: (PostBuild t m, DomBuilder t m) => Dynamic t Barraca -> m (Event t Acao)
 tabBarraca br = do
   el "tr" $ do
-    el "td" (text $ T.pack $ show $ barracaId br)
-    el "td" (text $ barracaNome br)
-    el "td" (text $ barracaCategoria br)
+    el "td" (dynText $ fmap (T.pack . show . barracaId) br)
+    el "td" (dynText $ fmap barracaNome br)
+    el "td" (dynText $ fmap barracaCategoria br)
+    evt <- fmap (fmap (const Perfil)) (button "perfil")
+    return (attachPromptlyDynWith (flip ($)) (fmap barracaId br) evt)
 
-reqBarracaLista :: ( DomBuilder t m , Prerender js t m , MonadHold t m , MonadFix m , PostBuild t m) => m ()
-reqBarracaLista = do
-  (btn, _) <- el' "button" (text "Listar Barracas")
-  let click = domEvent Click btn
+reqBarracaLista :: (DomBuilder t m , Prerender js t m , MonadHold t m , MonadFix m , PostBuild t m) => Workflow t m T.Text
+reqBarracaLista = Workflow $ do
+  btn <- button "Listar Barracas"
   barracs :: Dynamic t (Event t (Maybe [Barraca])) <- prerender
     (pure never)
-    (fmap decodeXhrResponse <$> performRequestAsync (const getListReq <$> click))
-  dynB <- foldDyn (\bs d -> case bs of
-                          Nothing -> []
-                          Just b -> d++b) [] (switchDyn barracs)
-  el "table" $ do
+    (fmap decodeXhrResponse <$> performRequestAsync (const getBarracaListReq <$> btn))
+  evt <- return (fmap (fromMaybe []) $ switchDyn barracs)
+  dynB <- foldDyn (++) [] evt
+  tb <- el "table" $ do
     el "thead" $ do
       el "tr" $ do
         el "th" (text "Id")
         el "th" (text "Nome")
         el "th" (text "Categoria")
     el "tbody" $ do
-      dyn_ (fmap sequence (ffor dynB (fmap tabBarraca)))
+      simpleList dynB tabBarraca
+  tb' <- return $ switchDyn $ fmap leftmost tb
+  return ("Listagem", escolherPag <$> tb')
+  where
+    escolherPag (Perfil bid) = pagPerfilBarraca bid
+
+
+pagPerfilBarraca :: (DomBuilder t m, Prerender js t m, MonadHold t m, MonadFix m, PostBuild t m) => Int -> Workflow t m T.Text
+pagPerfilBarraca bid = Workflow $ do
+  btn <- button "Exibir Produtos"
+  prods :: Dynamic t (Event t (Maybe [Produto])) <- prerender
+    (pure never)
+    (fmap decodeXhrResponse <$> performRequestAsync (const getProdutoListReq <$> btn))
+  evt <- return (fmap (fromMaybe []) $ switchDyn prods)
+  dynB <- foldDyn (++) [] evt
+  tb <- el "table" $ do
+    el "thead" $ do
+      el "tr" $ do
+        el "th" (text "Id")
+        el "th" (text "cdBarraca")
+        el "th" (text "Nome")
+        el "th" (text "Categoria")
+        el "th" (text "Valor")
+        el "th" (text "Qtd")
+    el "tbody" $ do
+      simpleList dynB tabProduto
+  tb' <- return $ switchDyn $ fmap leftmost tb
+  return ("Listagem", escolherPag <$> tb')
+  where
+    escolherPag (Editar pid) = pagPerfilProduto pid
+  
+pagPerfilProduto :: ( DomBuilder t m, Prerender js t m, MonadHold t m, MonadFix m, PostBuild t m) => Int -> Workflow t m T.Text
+pagPerfilProduto pid = Workflow $ do
+  btn <- button "mostrar"
+  prod :: Dynamic t (Event t (Maybe Produto)) <- prerender
+    (pure never)
+    (fmap decodeXhrResponse <$> performRequestAsync (const (getProdutoReq pid) <$> btn))
+  mdyn <- holdDyn Nothing (switchDyn prod)
+  dynP <- return ((fromMaybe (Produto 0 "" 0 0)) <$> mdyn)
+  el "div" $ do
+    el "div" (dynText $ fmap nomeProduto dynP)
+    el "div" (dynText $ fmap categoriaProduto dynP)
+    el "div" (dynText $ fmap (T.pack . show . valorProduto) dynP)
+    el "div" (dynText $ fmap (T.pack . show . qtdProduto) dynP)
+  ret <- button "voltar"
+  return ("Editar: " <> (T.pack $ show pid), reqBarracaLista <$ ret)
+
+reqListaBarraca :: (DomBuilder t m, Prerender js t m, MonadHold t m, MonadFix m, PostBuild t m) => m ()
+reqListaBarraca = do
+  r <- workflow reqBarracaLista
+  el "div" (dynText r)
+
+
+
+
+
+-- tabBarraca :: DomBuilder t m => Barraca -> m ()
+-- tabBarraca br = do
+--   el "tr" $ do
+--     el "td" (text $ T.pack $ show $ barracaId br)
+--     el "td" (text $ barracaNome br)
+--     el "td" (text $ barracaCategoria br)
+
+
+-- reqBarracaLista :: ( DomBuilder t m , Prerender js t m , MonadHold t m , MonadFix m , PostBuild t m) => m ()
+-- reqBarracaLista = do
+--   (btn, _) <- el' "button" (text "Listar Barracas")
+--   let click = domEvent Click btn
+--   barracs :: Dynamic t (Event t (Maybe [Barraca])) <- prerender
+--     (pure never)
+--     (fmap decodeXhrResponse <$> performRequestAsync (const getBarracaListReq <$> click))
+--   dynB <- foldDyn (\bs d -> case bs of
+--                           Nothing -> []
+--                           Just b -> d++b) [] (switchDyn barracs)
+--   el "table" $ do
+--     el "thead" $ do
+--       el "tr" $ do
+--         el "th" (text "Id")
+--         el "th" (text "Nome")
+--         el "th" (text "Categoria")
+--     el "tbody" $ do
+--       dyn_ (fmap sequence (ffor dynB (fmap tabBarraca)))
+
+-- reqOferta :: (DomBuilder t m, Prerender js t m) => m ()
+-- reqOferta = do
+--   cdBarracaOferta <- numberInput
+--   cdProdutoOferta <- numberInput
+--   desconto <- numberInput
+--   valorOferta <- numberInput
+--   let oferta = fmap (\(n,c) -> Oferta 0 n c) (zipDyn (_inputElement_value nome)(_inputElement_value categoria))
+--   (submitBtn,_) <- el' "button" (text "Inserir")
+--   let click = domEvent Click submitBtn
+--   let barrEvt = tag (current barraca) click
+--   _ :: Dynamic t (Event t (Maybe T.Text)) <- prerender
+--       (pure never)
+--       (fmap decodeXhrResponse <$> performRequestAsync (sendRequest (BackendRoute_Barraca :/ ()) <$> barrEvt))
+--   return ()
 
 frontend :: Frontend (R FrontendRoute)
 frontend = Frontend
@@ -262,13 +392,16 @@ frontend = Frontend
       elAttr "link" ("href" =: static @"main.css" 
                   <> "type" =: "text/css" 
                   <> "rel" =: "stylesheet") blank
-      elAttr "link" ("href" =: "https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" 
+
+      elAttr "link" ("href" =: "https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" 
                   <> "rel" =: "stylesheet" 
-                  <> "integrity" =: "sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" 
+                  <> "integrity" =: "sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" 
                   <> "crossorigin" =: "anonymous") blank
-      elAttr "script" ("href" =: "https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" 
-                  <> "integrity" =: "sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" 
+
+      elAttr "script" ("href" =: "https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" 
+                  <> "integrity" =: "sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" 
                   <> "crossorigin" =:"anonymous") blank
+
       elAttr "meta" ("name" =: "viewport" <> "content" =: "width=device-width, initial-scale=1") blank
   , _frontend_body = mainPag
   }
