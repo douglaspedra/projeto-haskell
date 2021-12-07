@@ -30,89 +30,6 @@ import Data.Aeson
 -- `prerender` functions.
 
 
---Exemplos aula:
-
-caixas :: (DomBuilder t m, PostBuild t m) => m ()
-caixas = el "div" $ do
-  t <- inputElement def -- m (Dynamic Text)
-  s <- inputElement def -- m (Dynamic Text)
-  text " "
-  dynText $ zipDynWith (<>) (_inputElement_value t) (_inputElement_value s)
-
-
-listaAtr :: Map T.Text T.Text
-listaAtr = "class" =: "class1" <> "id" =: "li2"
-
-menuEx :: DomBuilder t m => m ()
-menuEx = do
-  el "div" $ do
-    el "ul" $ do
-      el "li" (text "Item 1")
-      elAttr "li" listaAtr (text "Item 2")
-      el "li" (text "Item 3")
-      el "li" (text "Item 4")
-
-numberInput :: (DomBuilder t m, Num a, Read a) => m (Dynamic t a)
-numberInput = do 
-  n <- inputElement $ def
-    & inputElementConfig_initialValue .~ "0"
-    & inputElementConfig_elementConfig
-    . elementConfig_initialAttributes .~ ("type" =: "number")
-  return $ fmap (fromMaybe 0 . readMaybe . T.unpack)
-              (_inputElement_value n)
-
-caixaSoma :: (DomBuilder t m, PostBuild t m) => m ()
-caixaSoma = do
-  n1 <- numberInput -- Num a => m (Dynamic t Double)
-  text " "
-  n2 <- numberInput -- Num a => m (Dynamic t Double)
-  dynText (fmap (T.pack . show) (zipDynWith (+) n1 n2))
-
-revText :: T.Text -> T.Text
-revText t = T.pack (reverse (T.unpack t))
-
-buttonClick :: (DomBuilder t m, PostBuild t m, MonadHold t m) => m (Event t T.Text)
-buttonClick = do
-  t <- inputElement def
-  (e,_) <- el' "button" (text "OK")
-  return $ attachPromptlyDynWith const
-                                  (fmap revText (_inputElement_value t))
-                                  (domEvent Click e)
-
-bttnEvt :: (DomBuilder t m, PostBuild t m, MonadHold t m) => m ()
-bttnEvt = do
-  evt <- buttonClick
-  texto <- holdDyn "" evt --Event -> Dynamic
-  el "div" (dynText texto)
-
-sumButton :: (DomBuilder t m, PostBuild t m, MonadHold t m) => m (Event t Double)
-sumButton = do
-  n1 <- numberInput
-  text " "
-  n2 <- numberInput
-  text " "
-  (e,_) <- el' "button" (text "OK")
-  let dynDouble = zipDynWith (+) n1 n2
-  return $ attachPromptlyDynWith const
-                                dynDouble
-                                (domEvent Click e)
-
-sumEvt :: (DomBuilder t m, PostBuild t m, MonadHold t m) => m ()
-sumEvt = do
-  evt <- sumButton
-  s <- holdDyn 0 evt
-  el "div" (dynText $ fmap (T.pack . show) s)
-
-countClick :: DomBuilder t m => m (Event t Int)
-countClick = do
-  (ev, _) <- el' "button" (text "+")
-  return ((const 1) <$> domEvent Click ev)
-
-pagClick :: (MonadHold t m, PostBuild t m, DomBuilder t m, MonadFix m) => m ()
-pagClick = do 
-  evt <- countClick
-  st <- accumDyn (+) 0 evt
-  el "div" (dynText (fmap (T.pack . show) st))
 
 -----------------------------------------------------------------------------------------------------------------
 
@@ -226,12 +143,11 @@ getOfertaListReq = xhrRequest "GET" (getPath (BackendRoute_OfertaListar :/ ())) 
 getProdutoListReq :: XhrRequest ()
 getProdutoListReq = xhrRequest "GET" (getPath (BackendRoute_ProdutoListar :/ ())) def
 
-getProdutoReq :: Int -> XhrRequest ()
-getProdutoReq pid = xhrRequest "GET" (getPath (BackendRoute_ProdutoBuscar :/ pid)) def
-
 getFuncionarioListReq :: XhrRequest ()
 getFuncionarioListReq = xhrRequest "GET" (getPath (BackendRoute_FuncionarioListar :/ ())) def
 
+getProdutoReq :: Int -> XhrRequest ()
+getProdutoReq pid = xhrRequest "GET" (getPath (BackendRoute_ProdutoBuscar :/ pid)) def
 
 
 
@@ -248,10 +164,25 @@ req = do
   return ()
 
 
-
-
 reqBarraca :: (DomBuilder t m, Prerender js t m) => m ()
 reqBarraca = do
+  el "h3" $ text "Insere informacaoes da Barraca:"
+  el "label" (text "Nome: ")
+  nome <- inputElement def
+  el "label" (text "Categoria: ")
+  categoria <- inputElement def
+  let barraca = fmap (\(n,c) -> Barraca 0 n c) (zipDyn (_inputElement_value nome)(_inputElement_value categoria))
+  (submitBtn,_) <- el' "button" (text "Inserir")
+  let click = domEvent Click submitBtn
+  let barrEvt = tag (current barraca) click
+  _ :: Dynamic t (Event t (Maybe T.Text)) <- prerender
+      (pure never)
+      (fmap decodeXhrResponse <$> performRequestAsync (sendRequest (BackendRoute_Barraca :/ ()) <$> barrEvt))
+  return ()
+
+reqProduto :: (DomBuilder t m, Prerender js t m) => m ()
+reqProduto = do
+  el "h3" $ text "Insere informacoes do produto:"
   nome <- inputElement def
   categoria <- inputElement def
   let barraca = fmap (\(n,c) -> Barraca 0 n c) (zipDyn (_inputElement_value nome)(_inputElement_value categoria))
@@ -263,6 +194,9 @@ reqBarraca = do
       (fmap decodeXhrResponse <$> performRequestAsync (sendRequest (BackendRoute_Barraca :/ ()) <$> barrEvt))
   return ()
 
+
+
+
 tabBarraca :: (PostBuild t m, DomBuilder t m) => Dynamic t Barraca -> m (Event t Acao)
 tabBarraca br = do
   el "tr" $ do
@@ -272,6 +206,21 @@ tabBarraca br = do
     evt <- fmap (fmap (const Perfil)) (button "perfil")
     return (attachPromptlyDynWith (flip ($)) (fmap barracaId br) evt)
 
+tabProduto :: (PostBuild t m, DomBuilder t m) => Dynamic t Produto -> m (Event t Acao)
+tabProduto pr = do
+  el "tr" $ do
+    el "td" (dynText $ fmap (T.pack . show . idProduto) pr)
+    el "td" (dynText $ fmap (T.pack . show .nomeProduto) pr)
+    el "td" (dynText $ fmap (T.pack . show .categoriaProduto) pr)
+    el "td" (dynText $ fmap (T.pack . show .valorProduto) pr)
+    el "td" (dynText $ fmap (T.pack . show .qtdProduto) pr)
+    evt1 <- fmap (fmap (const Editar)) (button "editar")
+    evt2 <- fmap (fmap (const Deletar)) (button "deletar")
+    return (attachPromptlyDynWith (flip ($)) (fmap idProduto pr) (leftmost [evt1,evt2]))
+
+
+--reqTabela
+
 reqBarracaLista :: (DomBuilder t m , Prerender js t m , MonadHold t m , MonadFix m , PostBuild t m) => Workflow t m T.Text
 reqBarracaLista = Workflow $ do
   btn <- button "Listar Barracas"
@@ -280,7 +229,7 @@ reqBarracaLista = Workflow $ do
     (fmap decodeXhrResponse <$> performRequestAsync (const getBarracaListReq <$> btn))
   evt <- return (fmap (fromMaybe []) $ switchDyn barracs)
   dynB <- foldDyn (++) [] evt
-  tb <- el "table" $ do
+  tb <- elAttr "table" ("class" =: "table table-striped") $ do
     el "thead" $ do
       el "tr" $ do
         el "th" (text "Id")
@@ -289,9 +238,10 @@ reqBarracaLista = Workflow $ do
     el "tbody" $ do
       simpleList dynB tabBarraca
   tb' <- return $ switchDyn $ fmap leftmost tb
-  return ("Listagem", escolherPag <$> tb')
+  return ("", escolherPag <$> tb')
   where
     escolherPag (Perfil bid) = pagPerfilBarraca bid
+
 
 
 pagPerfilBarraca :: (DomBuilder t m, Prerender js t m, MonadHold t m, MonadFix m, PostBuild t m) => Int -> Workflow t m T.Text
@@ -302,11 +252,10 @@ pagPerfilBarraca bid = Workflow $ do
     (fmap decodeXhrResponse <$> performRequestAsync (const getProdutoListReq <$> btn))
   evt <- return (fmap (fromMaybe []) $ switchDyn prods)
   dynB <- foldDyn (++) [] evt
-  tb <- el "table" $ do
+  tb <- elAttr "table" ("class" =: "table table-striped") $ do
     el "thead" $ do
       el "tr" $ do
         el "th" (text "Id")
-        el "th" (text "cdBarraca")
         el "th" (text "Nome")
         el "th" (text "Categoria")
         el "th" (text "Valor")
@@ -314,7 +263,7 @@ pagPerfilBarraca bid = Workflow $ do
     el "tbody" $ do
       simpleList dynB tabProduto
   tb' <- return $ switchDyn $ fmap leftmost tb
-  return ("Listagem", escolherPag <$> tb')
+  return ("", escolherPag <$> tb')
   where
     escolherPag (Editar pid) = pagPerfilProduto pid
   
@@ -324,15 +273,29 @@ pagPerfilProduto pid = Workflow $ do
   prod :: Dynamic t (Event t (Maybe Produto)) <- prerender
     (pure never)
     (fmap decodeXhrResponse <$> performRequestAsync (const (getProdutoReq pid) <$> btn))
-  mdyn <- holdDyn Nothing (switchDyn prod)
-  dynP <- return ((fromMaybe (Produto 0 "" 0 0)) <$> mdyn)
+  mdyn <- return (switchDyn prod)
+  dynP <- return ((fromMaybe (Produto 0 0 "" "" 0 0)) <$> mdyn)
   el "div" $ do
-    el "div" (dynText $ fmap nomeProduto dynP)
-    el "div" (dynText $ fmap categoriaProduto dynP)
-    el "div" (dynText $ fmap (T.pack . show . valorProduto) dynP)
-    el "div" (dynText $ fmap (T.pack . show . qtdProduto) dynP)
-  ret <- button "voltar"
-  return ("Editar: " <> (T.pack $ show pid), reqBarracaLista <$ ret)
+    el "label" (text "Nome")
+    nome <- inputElement $ def & inputElementConfig_setValue .~ (fmap nomeProduto dynP)
+    el "label" (text "Categoria")
+    categoria <- inputElement $ def & inputElementConfig_setValue .~ (fmap categoriaProduto dynP)
+    el "label" (text "Valor")
+    vl <- numberInputDyn (fmap valorProduto dynP)
+    el "label" (text "Qtd")
+    qt <- numberInputDyn (fmap qtdProduto dynP)
+
+    let produ = fmap (\((n,c),(v,q)) -> Produto 0 0 n c v q) (zipDyn (zipDyn (_inputElement_value nome) (_inputElement_value categoria)) (zipDyn (vl)(qt)))
+    submitBtn <- button "Editar"
+    let prodEvt = tag (current produ) submitBtn
+    _ :: Dynamic t (Event t (Maybe T.Text)) <- prerender
+      (pure never)
+      (fmap decodeXhrResponse <$> performRequestAsync (sendRequest (BackendRoute_ProdutoEditar :/ pid) <$> prodEvt))
+  --ret <- button "editar"
+    return ("Editar: " <> (T.pack $ show pid), reqBarracaLista <$ submitBtn)
+
+
+
 
 reqListaBarraca :: (DomBuilder t m, Prerender js t m, MonadHold t m, MonadFix m, PostBuild t m) => m ()
 reqListaBarraca = do
@@ -341,7 +304,13 @@ reqListaBarraca = do
 
 
 
-
+numberInputDyn :: (DomBuilder t m, Num a, Read a, Show a) => Event t a -> m (Dynamic t a)
+numberInputDyn p = do
+    val <- return (fmap (T.pack . show) p)
+    n <- inputElement $ def
+      & inputElementConfig_setValue .~ val
+    return $ fmap (fromMaybe 0 . readMaybe . T.unpack)
+                  (_inputElement_value n)
 
 -- tabBarraca :: DomBuilder t m => Barraca -> m ()
 -- tabBarraca br = do
@@ -384,6 +353,93 @@ reqListaBarraca = do
 --       (pure never)
 --       (fmap decodeXhrResponse <$> performRequestAsync (sendRequest (BackendRoute_Barraca :/ ()) <$> barrEvt))
 --   return ()
+
+--Exemplos aula:
+
+caixas :: (DomBuilder t m, PostBuild t m) => m ()
+caixas = el "div" $ do
+  t <- inputElement def -- m (Dynamic Text)
+  s <- inputElement def -- m (Dynamic Text)
+  text " "
+  dynText $ zipDynWith (<>) (_inputElement_value t) (_inputElement_value s)
+
+
+listaAtr :: Map T.Text T.Text
+listaAtr = "class" =: "class1" <> "id" =: "li2"
+
+menuEx :: DomBuilder t m => m ()
+menuEx = do
+  el "div" $ do
+    el "ul" $ do
+      el "li" (text "Item 1")
+      elAttr "li" listaAtr (text "Item 2")
+      el "li" (text "Item 3")
+      el "li" (text "Item 4")
+
+numberInput :: (DomBuilder t m, Num a, Read a) => m (Dynamic t a)
+numberInput = do 
+  n <- inputElement $ def
+    & inputElementConfig_initialValue .~ "0"
+    & inputElementConfig_elementConfig
+    . elementConfig_initialAttributes .~ ("type" =: "number")
+  return $ fmap (fromMaybe 0 . readMaybe . T.unpack)
+              (_inputElement_value n)
+
+caixaSoma :: (DomBuilder t m, PostBuild t m) => m ()
+caixaSoma = do
+  n1 <- numberInput -- Num a => m (Dynamic t Double)
+  text " "
+  n2 <- numberInput -- Num a => m (Dynamic t Double)
+  dynText (fmap (T.pack . show) (zipDynWith (+) n1 n2))
+
+revText :: T.Text -> T.Text
+revText t = T.pack (reverse (T.unpack t))
+
+buttonClick :: (DomBuilder t m, PostBuild t m, MonadHold t m) => m (Event t T.Text)
+buttonClick = do
+  t <- inputElement def
+  (e,_) <- el' "button" (text "OK")
+  return $ attachPromptlyDynWith const
+                                  (fmap revText (_inputElement_value t))
+                                  (domEvent Click e)
+
+bttnEvt :: (DomBuilder t m, PostBuild t m, MonadHold t m) => m ()
+bttnEvt = do
+  evt <- buttonClick
+  texto <- holdDyn "" evt --Event -> Dynamic
+  el "div" (dynText texto)
+
+sumButton :: (DomBuilder t m, PostBuild t m, MonadHold t m) => m (Event t Double)
+sumButton = do
+  n1 <- numberInput
+  text " "
+  n2 <- numberInput
+  text " "
+  (e,_) <- el' "button" (text "OK")
+  let dynDouble = zipDynWith (+) n1 n2
+  return $ attachPromptlyDynWith const
+                                dynDouble
+                                (domEvent Click e)
+
+sumEvt :: (DomBuilder t m, PostBuild t m, MonadHold t m) => m ()
+sumEvt = do
+  evt <- sumButton
+  s <- holdDyn 0 evt
+  el "div" (dynText $ fmap (T.pack . show) s)
+
+countClick :: DomBuilder t m => m (Event t Int)
+countClick = do
+  (ev, _) <- el' "button" (text "+")
+  return ((const 1) <$> domEvent Click ev)
+
+pagClick :: (MonadHold t m, PostBuild t m, DomBuilder t m, MonadFix m) => m ()
+pagClick = do 
+  evt <- countClick
+  st <- accumDyn (+) 0 evt
+  el "div" (dynText (fmap (T.pack . show) st))
+
+
+
 
 frontend :: Frontend (R FrontendRoute)
 frontend = Frontend

@@ -36,15 +36,22 @@ data BackendRoute :: * -> * where
   BackendRoute_Barraca :: BackendRoute ()
   BackendRoute_BarracaListar :: BackendRoute ()
   BackendRoute_BarracaBuscar :: BackendRoute Int
+  BackendRoute_BarracaEditar :: BackendRoute Int
+  BackendRoute_BarracaDeletar :: BackendRoute Int
   BackendRoute_Produto :: BackendRoute ()
   BackendRoute_ProdutoListar :: BackendRoute ()
   BackendRoute_ProdutoBuscar :: BackendRoute Int
+  BackendRoute_ProdutoEditar :: BackendRoute Int
+  BackendRoute_ProdutoDeletar :: BackendRoute Int
   BackendRoute_Oferta :: BackendRoute ()
   BackendRoute_OfertaListar :: BackendRoute ()
   BackendRoute_OfertaBuscar :: BackendRoute Int
+  BackendRoute_OfertaDeletar :: BackendRoute Int
   BackendRoute_Funcionario :: BackendRoute ()
   BackendRoute_FuncionarioListar :: BackendRoute ()
   BackendRoute_FuncionarioBuscar :: BackendRoute Int
+  BackendRoute_FuncionarioEditar :: BackendRoute Int
+  BackendRoute_FuncionarioDeletar :: BackendRoute Int
 
   -- You can define any routes that will be handled specially by the backend here.
   -- i.e. These do not serve the frontend, but do something different, such as serving static files.
@@ -75,7 +82,17 @@ fullRouteEncoder = mkFullRouteEncoder
       BackendRoute_BarracaBuscar -> PathSegment "barracaBuscar" $ readShowEncoder
       BackendRoute_OfertaBuscar -> PathSegment "ofertaBuscar" $ readShowEncoder   
       BackendRoute_ProdutoBuscar -> PathSegment "produtoBuscar" $ readShowEncoder 
-      BackendRoute_FuncionarioBuscar -> PathSegment "funcionarioBuscar" $ readShowEncoder 
+      BackendRoute_FuncionarioBuscar -> PathSegment "funcionarioBuscar" $ readShowEncoder
+
+      BackendRoute_BarracaEditar -> PathSegment "barracaEditar" $ readShowEncoder
+      BackendRoute_ProdutoEditar -> PathSegment "produtoEditar" $ readShowEncoder 
+      BackendRoute_FuncionarioEditar -> PathSegment "funcionarioEditar" $ readShowEncoder
+
+      BackendRoute_BarracaDeletar -> PathSegment "barracaDeletar" $ readShowEncoder
+      BackendRoute_OfertaDeletar -> PathSegment "ofertaDeletar" $ readShowEncoder   
+      BackendRoute_ProdutoDeletar -> PathSegment "produtoDeletar" $ readShowEncoder 
+      BackendRoute_FuncionarioDeletar -> PathSegment "funcionarioDeletar" $ readShowEncoder
+      
       )
   (\case
       FrontendRoute_Main -> PathEnd $ unitEncoder mempty)
