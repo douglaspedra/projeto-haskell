@@ -97,11 +97,6 @@ barracasPag = do
   el "h3" (text "Pagina Barracas")
   el "span" (text "Pagina em construcao")
 
--- funcionariosPag :: (DomBuilder t m, PostBuild t m, MonadHold t m) => m ()
--- funcionariosPag = do
---   el "h3" (text "Pagina Funcionarios")
---   el "span" (text "Pagina em construcao")
-
 cadastrosPag :: (DomBuilder t m, PostBuild t m, MonadHold t m, MonadFix m, Prerender js t m) => m ()
 cadastrosPag = do
   el "h3" (text "Pagina Cadastro")
@@ -134,7 +129,7 @@ exemplosPag = do
   el "h3" $ text "Contador :"
   pagClick 
 
---para obter o /cliente /barraca /buscar/13
+
 getPath :: R BackendRoute -> T.Text
 getPath p = renderBackendRoute checFullREnc p
 
@@ -273,6 +268,8 @@ tabFuncionario fun = do
 
 reqBarracaLista :: (DomBuilder t m , Prerender js t m , MonadHold t m , MonadFix m , PostBuild t m) => Workflow t m T.Text
 reqBarracaLista = Workflow $ do
+  el "h3" (text "Pagina Barracas")
+  el "span" (text "Clique no botão ao lado para exibir as Barracas.   ")
   btn <- button "Listar Barracas"
   barracs :: Dynamic t (Event t (Maybe [Barraca])) <- prerender
     (pure never)
@@ -294,6 +291,8 @@ reqBarracaLista = Workflow $ do
 
 reqProdutoLista :: (DomBuilder t m , Prerender js t m , MonadHold t m , MonadFix m , PostBuild t m) => Int -> Workflow t m T.Text
 reqProdutoLista pid = Workflow $ do
+  el "h3" (text "Pagina Produtos")
+  el "span" (text "Clique no botão ao lado para exibir os Produtos.   ")
   btn <- button "Listar Produtos"
   prods :: Dynamic t (Event t (Maybe [Produto])) <- prerender
     (pure never)

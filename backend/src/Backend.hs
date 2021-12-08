@@ -130,7 +130,7 @@ backend = Backend
             BackendRoute_FuncionarioBuscar :/ fid -> method GET $ do
               res :: [Funcionario] <- liftIO $ do
                   execute_ dbcon migrateFuncionario
-                  query dbcon "SELECT * FROM tb_funcionario WHERE idFuncionario=?" (Only (fid :: Int))
+                  query dbcon "select idFuncionario, tb_funcionario.nome, tb_barraca.nome, cpf, telefone from tb_funcionario inner join tb_barraca on tb_barraca.barracaId = tb_funcionario.cdBarraca and tb_funcionario.cdBarraca = ?" (Only (fid :: Int))
               if res /= [] then do
                   modifyResponse $ setResponseStatus 200 "OK"
                   writeLazyText (encodeToLazyText (Prelude.head res))
@@ -148,7 +148,7 @@ backend = Backend
             BackendRoute_ProdutoBuscar :/ pid -> method GET $ do
               res :: [Produto] <- liftIO $ do
                   execute_ dbcon migrateProduto
-                  query dbcon "SELECT * FROM tb_produto WHERE idProduto=?" (Only (pid :: Int))
+                  query dbcon "SELECT idProduto, cdBarraca, nome, categoriaProduto, valor, qtd FROM tb_produto WHERE cdBarraca = ?" (Only (pid :: Int))
               if res /= [] then do
                   modifyResponse $ setResponseStatus 200 "OK"
                   writeLazyText (encodeToLazyText (Prelude.head res))
