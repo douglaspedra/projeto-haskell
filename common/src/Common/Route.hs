@@ -32,7 +32,7 @@ checFullREnc = checkEncoder fullRouteEncoder &
 data BackendRoute :: * -> * where
   -- | Used to handle unparseable routes.
   BackendRoute_Missing :: BackendRoute ()
-  BackendRoute_Cliente :: BackendRoute ()
+  --BackendRoute_Cliente :: BackendRoute ()
   BackendRoute_Barraca :: BackendRoute ()
   BackendRoute_BarracaListar :: BackendRoute ()
   BackendRoute_BarracaBuscar :: BackendRoute Int
@@ -41,12 +41,9 @@ data BackendRoute :: * -> * where
   BackendRoute_Produto :: BackendRoute ()
   BackendRoute_ProdutoListar :: BackendRoute ()
   BackendRoute_ProdutoBuscar :: BackendRoute Int
+  BackendRoute_ProdutoBarraca :: BackendRoute Int
   BackendRoute_ProdutoEditar :: BackendRoute Int
   BackendRoute_ProdutoDeletar :: BackendRoute Int
-  BackendRoute_Oferta :: BackendRoute ()
-  BackendRoute_OfertaListar :: BackendRoute ()
-  BackendRoute_OfertaBuscar :: BackendRoute Int
-  BackendRoute_OfertaDeletar :: BackendRoute Int
   BackendRoute_Funcionario :: BackendRoute ()
   BackendRoute_FuncionarioListar :: BackendRoute ()
   BackendRoute_FuncionarioBuscar :: BackendRoute Int
@@ -66,33 +63,30 @@ fullRouteEncoder = mkFullRouteEncoder
   (FullRoute_Backend BackendRoute_Missing :/ ())
   (\case
       BackendRoute_Missing -> PathSegment "missing" $ unitEncoder mempty
-      BackendRoute_Cliente -> PathSegment "cliente" $ unitEncoder mempty
+      --BackendRoute_Cliente -> PathSegment "cliente" $ unitEncoder mempty
       BackendRoute_Barraca -> PathSegment "barraca" $ unitEncoder mempty
-      BackendRoute_Oferta -> PathSegment "oferta" $ unitEncoder mempty   
       BackendRoute_Produto -> PathSegment "produto" $ unitEncoder mempty      
       BackendRoute_Funcionario -> PathSegment "funcionario" $ unitEncoder mempty
       --         
       --BackendRoute_ClienteListar -> PathSegment "clienteListar" $ unitEncoder mempty
       BackendRoute_BarracaListar -> PathSegment "barracaListar" $ unitEncoder mempty
-      BackendRoute_OfertaListar -> PathSegment "ofertaListar" $ unitEncoder mempty
       BackendRoute_ProdutoListar -> PathSegment "produtoListar" $ unitEncoder mempty
       BackendRoute_FuncionarioListar -> PathSegment "funcionarioListar" $ unitEncoder mempty
       --
       --BackendRoute_ClienteBuscar -> PathSegment "clienteBuscar" $ readShowEncoder
       BackendRoute_BarracaBuscar -> PathSegment "barracaBuscar" $ readShowEncoder
-      BackendRoute_OfertaBuscar -> PathSegment "ofertaBuscar" $ readShowEncoder   
       BackendRoute_ProdutoBuscar -> PathSegment "produtoBuscar" $ readShowEncoder 
       BackendRoute_FuncionarioBuscar -> PathSegment "funcionarioBuscar" $ readShowEncoder
+      BackendRoute_ProdutoBarraca -> PathSegment "produtoBarracaBuscar" $ readShowEncoder
 
       BackendRoute_BarracaEditar -> PathSegment "barracaEditar" $ readShowEncoder
       BackendRoute_ProdutoEditar -> PathSegment "produtoEditar" $ readShowEncoder 
       BackendRoute_FuncionarioEditar -> PathSegment "funcionarioEditar" $ readShowEncoder
 
       BackendRoute_BarracaDeletar -> PathSegment "barracaDeletar" $ readShowEncoder
-      BackendRoute_OfertaDeletar -> PathSegment "ofertaDeletar" $ readShowEncoder   
       BackendRoute_ProdutoDeletar -> PathSegment "produtoDeletar" $ readShowEncoder 
       BackendRoute_FuncionarioDeletar -> PathSegment "funcionarioDeletar" $ readShowEncoder
-      
+
       )
   (\case
       FrontendRoute_Main -> PathEnd $ unitEncoder mempty)

@@ -32,12 +32,8 @@ migrateBarraca = "CREATE TABLE IF NOT EXISTS tb_barraca (idBarraca SERIAL PRIMAR
 migrateProduto :: Query
 migrateProduto = "CREATE TABLE IF NOT EXISTS tb_produto (idProduto SERIAL PRIMARY KEY, cdBarraca INTEGER NOT NULL REFERENCES tb_barraca ON DELETE CASCADE, nome TEXT NOT NULL, categoriaProduto TEXT NOT NULL, valorProduto REAL NOT NULL, qtd INTEGER NOT NULL)"
 
-migrateOferta :: Query
-migrateOferta = "CREATE TABLE IF NOT EXISTS tb_oferta (idOferta SERIAL PRIMARY KEY, cdProduto INTEGER NOT NULL REFERENCES tb_produto ON DELETE CASCADE, desconto REAL NOT NULL, valorOferta REAL NOT NULL)"
-
 migrateFuncionario :: Query
 migrateFuncionario = "CREATE TABLE IF NOT EXISTS tb_funcionario (idFuncionario SERIAL PRIMARY KEY, cdBarraca INTEGER NOT NULL REFERENCES tb_barraca ON DELETE CASCADE, nome TEXT NOT NULL, cpf TEXT NOT NULL, telefone TEXT NOT NULL)"
-
 
 backend :: Backend BackendRoute FrontendRoute
 backend = Backend
@@ -54,16 +50,6 @@ backend = Backend
                         writeLazyText (encodeToLazyText (Prelude.head res))
                 else 
                         modifyResponse $ setResponseStatus 404 "NOT FOUND"            
-            
-            BackendRoute_OfertaDeletar :/ oid -> do
-                res :: [Oferta] <- liftIO $ do
-                        execute_ dbcon migrateOferta
-                        query dbcon "DELETE FROM tb_oferta where idOferta = ?" (Only (oid :: Int))
-                if res /= [] then do
-                        modifyResponse $ setResponseStatus 200 "OK"   
-                        writeLazyText (encodeToLazyText (Prelude.head res))
-                else 
-                        modifyResponse $ setResponseStatus 404 "NOT FOUND"
 
             BackendRoute_ProdutoDeletar :/ pid -> do
                 res :: [Produto] <- liftIO $ do
@@ -126,12 +112,6 @@ backend = Backend
                   query_ dbcon "SELECT * FROM tb_funcionario"
               modifyResponse $ setResponseStatus 200 "OK"
               writeLazyText (encodeToLazyText res)            
-            BackendRoute_OfertaListar :/ () -> method GET $ do
-              res :: [Oferta] <- liftIO $ do
-                  execute_ dbcon migrateOferta
-                  query_ dbcon "SELECT * FROM tb_oferta"
-              modifyResponse $ setResponseStatus 200 "OK"
-              writeLazyText (encodeToLazyText res)              
             BackendRoute_ProdutoListar :/ () -> method GET $ do
               res :: [Produto] <- liftIO $ do
                   execute_ dbcon migrateProduto
@@ -156,15 +136,15 @@ backend = Backend
                   writeLazyText (encodeToLazyText (Prelude.head res))
               else
                   modifyResponse $ setResponseStatus 404 "NOT FOUND"             
-            BackendRoute_OfertaBuscar :/ oid -> method GET $ do
-              res :: [Oferta] <- liftIO $ do
-                  execute_ dbcon migrateOferta
-                  query dbcon "SELECT * FROM tb_oferta WHERE idOferta=?" (Only (oid :: Int))
+            BackendRoute_ProdutoBarraca :/ bid -> method GET $ do
+              res :: [Produto] <- liftIO $ do
+                  execute_ dbcon migrateProduto
+                  query dbcon "SELECT * FROM tb_produto WHERE cdBarraca=?" (Only (bid :: Int))
               if res /= [] then do
                   modifyResponse $ setResponseStatus 200 "OK"
-                  writeLazyText (encodeToLazyText (Prelude.head res))
+                  writeLazyText (encodeToLazyText res)
               else
-                  modifyResponse $ setResponseStatus 404 "NOT FOUND"            
+                  modifyResponse $ setResponseStatus 404 "NOT FOUND"             
             BackendRoute_ProdutoBuscar :/ pid -> method GET $ do
               res :: [Produto] <- liftIO $ do
                   execute_ dbcon migrateProduto
@@ -196,16 +176,6 @@ backend = Backend
                             (cdBarracaFuncionario funcionarios, nomeFuncionario funcionarios, cpfFuncionario funcionarios, telefoneFuncionario funcionarios)
                   modifyResponse $ setResponseStatus 200 "OK"
                 Nothing -> modifyResponse $ setResponseStatus 500 "ERRO"            
-            BackendRoute_Oferta :/ () -> method POST $ do
-              ofer <- A.decode <$> readRequestBody 2000
-              case ofer of
-                Just ofertas -> do
-                  liftIO $ do
-                    execute_ dbcon migrateOferta
-                    execute dbcon "INSERT INTO tb_oferta (cdProduto, desconto, valorOferta) VALUES (?,?,?)"
-                            (cdProdutoOferta ofertas, descontoOferta ofertas, valorOferta ofertas)
-                  modifyResponse $ setResponseStatus 200 "OK"
-                Nothing -> modifyResponse $ setResponseStatus 500 "ERRO"
             BackendRoute_Produto :/ () -> method POST $ do
               prod <- A.decode <$> readRequestBody 2000
               case prod of
@@ -226,12 +196,5 @@ backend = Backend
                             (barracaNome barraca, barracaCategoria barraca)
                   modifyResponse $ setResponseStatus 200 "OK"
                 Nothing -> modifyResponse $ setResponseStatus 500 "ERRO"
-            BackendRoute_Cliente :/ () -> method POST $ do
-              Just nome <- A.decode <$> readRequestBody 2000
-              liftIO $ do
-                execute_ dbcon migrate
-                execute dbcon "INSERT INTO cliente (nome) VALUES (?)" [nome :: Text]
-              modifyResponse $ setResponseStatus 200 "OK"
-            _ -> return ()
   , _backend_routeEncoder = fullRouteEncoder
   }

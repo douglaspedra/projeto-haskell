@@ -36,6 +36,8 @@ data Barraca = Barraca {
     barracaCategoria :: Text
 } deriving (Generic, ToJSON, FromJSON, ToRow, FromRow, Eq, Show)
 
+
+
 data Produto = Produto {
     idProduto :: Int,
     cdBarracaProduto :: Int,
@@ -45,12 +47,12 @@ data Produto = Produto {
     qtdProduto :: Int
 } deriving (Generic, ToJSON, FromJSON, ToRow, FromRow, Eq, Show)
 
-data Oferta = Oferta {
-    idOferta :: Int,
-    cdProdutoOferta :: Int,
-    descontoOferta :: Double,
-    valorOferta :: Double    
-} deriving (Generic, ToJSON, FromJSON, ToRow, FromRow, Eq, Show)
+-- data Oferta = Oferta {
+--     idOferta :: Int,
+--     cdProdutoOferta :: Int,
+--     descontoOferta :: Double,
+--     valorOferta :: Double    
+-- } deriving (Generic, ToJSON, FromJSON, ToRow, FromRow, Eq, Show)
 
 -- data Zona = Zona {
 --     idZona :: Int,
